@@ -1,0 +1,79 @@
+@*
+* Query - airports by country"
+*@
+@(form: Form[String], country: Option[Country] = None, airports: Seq[Airport] = Seq.empty )(implicit request: RequestHeader, messages: Messages)
+
+@main("Query - airports by country")(Some("query")) {
+<div class="jumbotron">
+    <div class="container">
+        <h1>Query</h1>
+        <p>Please enter a country name or code :</p>
+        <p>
+            @helper.form(action = routes.HomeController.airportsByCountry) {
+            @helper.CSRF.formField
+            @helper.inputText(form("country"))
+            <button>Show</button>
+            }
+        </p>
+    </div>
+</div>
+
+<div class="container">
+
+    @if(country.nonEmpty) {
+    <h3>@country.get.name <span class="label label-primary">@country.get.continent</span></h3><br>
+    @if(airports.nonEmpty) {
+    <ul class="list-group">
+        @for((airport,index) <- airports.zipWithIndex) {
+        <li class="list-group-item @if(index % 2 == 0) { list-group-item-info } ">
+            <span class="badge">@airport.category</span>
+            <h4>@airport.name (@airport.ident)</h4>
+            @if(airport.municipality.nonEmpty) { <p>Municipality: @airport.municipality</p> }
+
+            <div class="panel @if(index % 2 == 0) { panel-primary } else { panel-default }">
+                <div class="panel-heading">GPS coordinates</div>
+                <div class="panel-body">
+                    <p>Latitude: @airport.latitudeDegree</p>
+                    <p>Longitude: @airport.longitudeDegree</p>
+                    <p>Elevation: @airport.elevationFeet ft</p>
+                    @if(airport.gpsCode.nonEmpty) { <p>GPS code: @airport.gpsCode</p> }
+                    @if(airport.iataCode.nonEmpty) { <p>IATA code: @airport.iataCode</p> }
+                    @if(airport.localCode.nonEmpty) { <p>Local code: @airport.localCode</p> }
+                </div>
+            </div>
+
+            <p class="text-right">
+                @if(airport.wikipediaLink.nonEmpty) { <a class="btn btn-primary" href="@airport.wikipediaLink" role="button">Wikipedia</a> }
+                @if(airport.homeLink.nonEmpty) { <a class="btn btn-primary" href="@airport.homeLink" role="button">Airport link</a>}
+            </p>
+
+            @if(airport.keywords.nonEmpty) {
+            <div class="text-left">
+                Keywords
+                @for((keyword, index) <- airport.keywords.zipWithIndex) {
+                <span class="label @if(index % 2 == 0) { label-primary } else { label-warning }">@keyword</span>
+                }
+            </div>
+            }
+
+            @if(airport.runways.nonEmpty) {
+            <p>Runways :</p>
+            <ul>
+                @for(runway <- airport.runways.get) {
+                <li>
+                    @if(runway.lowEnd.ident.nonEmpty) { Identity: @runway.lowEnd.ident}
+                    (
+                    surface: @runway.surface
+                    @if(runway.lengthFeet.nonEmpty) {, length: @runway.lengthFeet ft }
+                    @if(runway.widthFeet.nonEmpty) {, width: @runway.widthFeet ft }
+                    )
+                </li>
+                }
+            </ul>
+            }
+        </li>
+        }
+    </ul>
+    }}
+</div>
+}

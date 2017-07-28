@@ -1,0 +1,45 @@
+@(title: String)(menu: Option[String] = None)(content: Html)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="sfelix">
+    <link rel="icon" href="@routes.Assets.versioned("img/favicon.ico")">
+
+    <title>@title</title>
+    <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("css/bootstrap.min.css")">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+@menuQuery = @{Some("query")}
+@menuReports = @{Some("reports")}
+<body>
+    <div class="container">
+        <nav class="navbar navbar-inverse navbar-fixed-top">
+            <div class="container">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="@routes.HomeController.index">World Airport Dashboard</a>
+                </div>
+                <div class="navbar-right">
+                <p class="navbar-text " @if(menu == menuQuery) {class="active"}><a class="navbar-link" href="@routes.HomeController.query">Query</a></p>
+                <p class="navbar-text" @if(menu == menuReports) {class="active"}><a class="navbar-link" href="@routes.HomeController.reports">Reports</a></p>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <br>
+
+    @content
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="@routes.Assets.versioned("js/bootstrap.min.js")"></script>
+</body>
+</html>

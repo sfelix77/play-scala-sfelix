@@ -1,0 +1,73 @@
+@*
+* Reports
+*@
+@(countriesTop10: Option[Seq[Country]], countriesBottom10: Option[Seq[Country]],
+    typeOfRunawayPerCountry: Option[Seq[(Country, Seq[String])]], runwayIdentTop10: Option[Seq[(String, Int)]])
+
+@display(country: Country) = {
+  <p><span class="badge">@country.airports.getOrElse(Seq.empty).length</span>  @country.name</p>
+}
+
+@displayWithTypeOfRunaway(country: Country, surfaces: Seq[String]) = {
+  <p>@country.name
+    @for((surface, index) <- surfaces.zipWithIndex) {
+    <span class="label @if(index % 6 == 0) { label-primary } else if(index % 5 == 0) { label-default } else if(index % 4 == 0) { label-danger } else if(index % 3 == 0) { label-info } else if(index % 2 == 0) { label-success} else { label-warning }">
+      @surface
+    </span> &nbsp;
+  }
+  </p>
+}
+
+@main("Reports")(Some("reports")) {
+
+<div class="container">
+  <div class="pager"><h1>Reports</h1></div>
+  <div class="row">
+    <div class="col-md-7">
+
+      @if(countriesTop10.nonEmpty) {
+      <div class="panel panel-primary">
+        <div class="panel-heading"><h4>Top 10 countries with highest number of airports</h4></div>
+        <div class="panel-body">
+            @for(country <- countriesTop10.get) { @display(country) }
+        </div>
+      </div>
+      }
+
+      @if(countriesTop10.nonEmpty) {
+      <div class="panel panel-primary">
+        <div class="panel-heading"><h4>Bottom 10 countries with lowest number of airports</h4></div>
+        <div class="panel-body">
+            @for(country <- countriesBottom10.get) { @display(country) }
+        </div>
+      </div>
+      }
+
+      @if(runwayIdentTop10.nonEmpty) {
+      <div class="panel panel-primary">
+        <div class="panel-heading"><h4>Top 10 most common runway identifications</h4></div>
+        <div class="panel-body">
+          @for(tuple <- runwayIdentTop10.get) {
+          <p><span class="badge">@tuple._2</span>  @tuple._1</p>
+          }
+        </div>
+      </div>
+      }
+
+    </div>
+    <div class="col-md-5">
+      @if(typeOfRunawayPerCountry.nonEmpty) {
+      <div class="panel panel-primary">
+        <div class="panel-heading"><h4>Type of runways per country</h4></div>
+        <div class="panel-body">
+          @for(tuple <- typeOfRunawayPerCountry.get) {
+          @displayWithTypeOfRunaway(tuple._1, tuple._2)
+          }
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+</div>
+
+}

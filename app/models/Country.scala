@@ -1,6 +1,6 @@
 package models
 
-/**
+/** Country Model
   *
   * @param id
   * @param code
@@ -22,8 +22,8 @@ case class Country (
   require(id>=0 && code.nonEmpty && name.nonEmpty && continent.nonEmpty)
 }
 
-/**
-  *
+/** Country Companion
+  * Define apply from csv line parsed
   */
 object Country {
   def apply(csvLine: Seq[String]) : Option[Country] = {

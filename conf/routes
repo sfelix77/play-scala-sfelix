@@ -7,8 +7,9 @@
 GET     /                           controllers.HomeController.index
 
 # Query
-GET     /query                      controllers.HomeController.query
+GET     /query                      controllers.HomeController.query(country:Option[String])
 POST    /query                      controllers.HomeController.airportsByCountry
+GET     /autocomplete               controllers.HomeController.autocomplete(country:String)
 
 # Reports
 GET     /reports                    controllers.HomeController.reports

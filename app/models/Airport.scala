@@ -1,6 +1,6 @@
 package models
 
-/**
+/** Airport Model
   *
   * @param id
   * @param ident
@@ -46,8 +46,8 @@ case class Airport (
   require(id>=0 && ident.nonEmpty && category.nonEmpty && name.nonEmpty && continent.nonEmpty && isoCountry.nonEmpty && isoRegion.nonEmpty)
 }
 
-/**
-  *
+/** Airport Companion
+  * Define apply from csv line parsed
   */
 object Airport {
   def apply(csvLine: Seq[String]) : Option[Airport] = {

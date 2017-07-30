@@ -1,6 +1,6 @@
 package models
 
-/**
+/** Runway Ending Model
   *
   * @param ident
   * @param latitudeDegree

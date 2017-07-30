@@ -1,6 +1,6 @@
 package models
 
-/**
+/** Runway Model
   *
   * @param id
   * @param airportRef
@@ -28,8 +28,8 @@ case class Runway (
   require(id>=0 && airportRef>=0 && airportIdent.nonEmpty && lowEnd != null && highEnd != null)
 }
 
-/**
-  *
+/** Runway Companion
+  * Define apply from csv line parsed
   */
 object Runway {
   def apply(csvLine: Seq[String]) : Option[Runway] = {

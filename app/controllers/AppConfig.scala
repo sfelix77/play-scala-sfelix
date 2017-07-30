@@ -6,11 +6,14 @@ import com.typesafe.config.{Config, ConfigException, ConfigFactory}
 import scala.io.Source
 import com.github.tototoshi.csv.CSVParser
 
-/**
+/** Configuration
   *
   */
 object AppConfig {
 
+  /** Catalog with countries, airports and runways
+    * Build relations country --> airports --> runways
+    */
   lazy val catalog: Catalog = {
 
     if (_countriesCsvUri.isEmpty)
@@ -51,7 +54,7 @@ object AppConfig {
   private lazy val _airportsCsvUri: Option[String] = _getConfigString("airportsCsvUri")
   private lazy val _runwaysCsvUri: Option[String] = _getConfigString("runwaysCsvUri")
 
-  /**
+  /** Load list of a model T from URI and csv builder function
     *
     * @param uri
     * @param build
@@ -61,7 +64,7 @@ object AppConfig {
   private def _loadCsv[T](uri: String, build: (Seq[String]) => Option[T]): Seq[T] = {
     try {
       val stream = getClass.getResourceAsStream(uri)
-      val lines = Source.fromInputStream(stream).getLines
+      val lines = Source.fromInputStream(stream, "UTF-8").getLines
 
       lines.drop(1)
         .map(CSVParser.parse(_, '\\', ',', '"'))

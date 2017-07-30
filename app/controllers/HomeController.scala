@@ -1,72 +1,86 @@
 package controllers
 
 import models._
-
 import javax.inject._
+
 import play.api.i18n._
 import play.api.mvc._
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.libs.json.Json
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 /**
   *
   * @param cc
   */
 @Singleton
-class HomeController @Inject()(cc: ControllerComponents) extends AbstractController(cc) with I18nSupport {
+class HomeController @Inject()(cc: ControllerComponents)(implicit ec: ExecutionContext) extends AbstractController(cc) with I18nSupport {
 
   private val _countryForm: Form[String] = Form(single("country" -> nonEmptyText(2)))
 
-  private def _countryFilter(country: Country, value: String) : Boolean = {
+  private def _countryFilter(country: Country, value: String, isLazy: Boolean) : Boolean = {
     val _value = value.toLowerCase
 
     (value.length == 2 && country.code.toLowerCase == _value) ||
-      (value.length > 2 && (country.name.toLowerCase == _value || country.name.toLowerCase.startsWith(_value)))
+      ((isLazy || value.length > 2) && (country.name.toLowerCase == _value || country.name.toLowerCase.startsWith(_value)))
   }
 
-  /**
+  /** Home
     *
-    * @return
+    * @return home page
     */
   def index = Action { implicit request =>
     Ok(views.html.index())
   }
 
-  /**
+  /** GET /query?country=
     *
-    * @return
+    * @param country
+    * @return query page if param country is empty else query page with the country found and this airports
     */
-  def query = Action { implicit request =>
-    Ok(views.html.query(_countryForm))
+  def query(country: Option[String]) = Action { implicit request =>
+    if(country.isEmpty)
+      Ok(views.html.query(_countryForm))
+    else {
+      val countryAirports = _findCountryAirports(country.get)
+      Ok(views.html.query(_countryForm, true, countryAirports._1, countryAirports._2))
+    }
+
   }
 
-  /**
+  /** POST /query
     *
-    * @return
+    * @return query page with the country found and this airports
     */
   def airportsByCountry = Action { implicit request =>
-    val formResult = _countryForm.bindFromRequest
-
-    formResult.fold(
+    _countryForm.bindFromRequest.fold(
       formErrors => BadRequest(views.html.query(formErrors)),
-      data => {
-        val countries = AppConfig.catalog.countries.filter(_countryFilter(_, data))
-        val country = countries.headOption
-        val airports = {
-          if(country.nonEmpty) {
-            country.get.airports.getOrElse(Seq.empty)
-          }
-          else Seq.empty[Airport]
-        }
-
-        Ok(views.html.query(_countryForm, country, airports))
+      country => {
+        val countryAirports = _findCountryAirports(country)
+        Ok(views.html.query(_countryForm, true, countryAirports._1, countryAirports._2))
       }
     )
   }
 
-  /**
+  private def _findCountryAirports(country: String): (Option[Country], Seq[Airport]) = {
+    val countries = AppConfig.catalog.countries.filter(_countryFilter(_, country, false)).sortWith(_.name < _.name)
+    val countryFound = countries.headOption
+    val airportsFound = {
+      if(countryFound.nonEmpty) {
+        countryFound.get.airports.getOrElse(Seq.empty)
+      }
+      else Seq.empty[Airport]
+    }
+
+    (countryFound, airportsFound)
+  }
+
+  /** GET /reports
     *
-    * @return
+    * @return reports page
     */
   def reports = Action { implicit request =>
 
@@ -121,5 +135,36 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
     }
 
     Ok(views.html.reports(countriesTop10, countriesBottom10, typeOfRunawayPerCountry, runwayIdentTop10))
+  }
+
+  case class CountryAutoComplete (value: String, label: String)
+  implicit val countryAutoComplete = Json.format[CountryAutoComplete]
+
+  /** GET /autocomplete/?country=
+    *
+    * @param country
+    * @return list of country found (JSON format)
+    */
+  def autocomplete(country: String) = Action.async { implicit request =>
+    _countryForm.bindFromRequest.fold(
+      formWithErrors => {
+        Future(Ok(Json.toJson(List.empty[CountryAutoComplete])))
+      },
+      data => {
+        Future { AppConfig.catalog.countries
+          .filter(_countryFilter(_, data, true))
+          .map(c => CountryAutoComplete(c.code, c.name))
+          .sortWith((u,v) =>
+            if(u.value.toLowerCase == data.toLowerCase) {true}
+            else if(v.value.toLowerCase == data.toLowerCase) {false}
+            else {u.label < v.label})
+        }
+        .map(countries => Ok(Json.toJson(countries)))
+        .recover {
+          case NonFatal(t) =>
+            Ok(Json.toJson(List.empty[CountryAutoComplete]))
+        }
+      }
+    )
   }
 }

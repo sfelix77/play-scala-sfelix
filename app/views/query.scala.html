@@ -1,27 +1,29 @@
 @*
 * Query - airports by country"
 *@
-@(form: Form[String], country: Option[Country] = None, airports: Seq[Airport] = Seq.empty )(implicit request: RequestHeader, messages: Messages)
+@(form: Form[String], showResult: Boolean = false, country: Option[Country] = None, airports: Seq[Airport] = Seq.empty )(implicit request: RequestHeader, messages: Messages)
+
+@implicitField = @{ helper.FieldConstructor(countryInputText.f) }
 
 @main("Query - airports by country")(Some("query")) {
 <div class="jumbotron">
     <div class="container">
         <h1>Query</h1>
-        <p>Please enter a country name or code :</p>
-        <p>
-            @helper.form(action = routes.HomeController.airportsByCountry) {
+        <p>@helper.form(action = routes.HomeController.airportsByCountry, 'id -> "countryForm") {
             @helper.CSRF.formField
-            @helper.inputText(form("country"))
-            <button>Show</button>
+            Please enter a country name or code : &nbsp;
+            @helper.inputText(form("country"), 'placeholder -> "country name or code", '_showConstraints -> false, 'autocomplete -> "off")
+            &nbsp;
+            <button class="btn btn-primary btn-sm">Show</button>
             }
         </p>
     </div>
 </div>
 
 <div class="container">
-
+    @if(showResult) {
     @if(country.nonEmpty) {
-    <h3>@country.get.name <span class="label label-primary">@country.get.continent</span></h3><br>
+    <h3>@country.get.name <span class="label label-primary">@country.get.code</span></h3><br>
     @if(airports.nonEmpty) {
     <ul class="list-group">
         @for((airport,index) <- airports.zipWithIndex) {
@@ -35,7 +37,7 @@
                 <div class="panel-body">
                     <p>Latitude: @airport.latitudeDegree</p>
                     <p>Longitude: @airport.longitudeDegree</p>
-                    <p>Elevation: @airport.elevationFeet ft</p>
+                    <p>Elevation: @{airport.elevationFeet}ft</p>
                     @if(airport.gpsCode.nonEmpty) { <p>GPS code: @airport.gpsCode</p> }
                     @if(airport.iataCode.nonEmpty) { <p>IATA code: @airport.iataCode</p> }
                     @if(airport.localCode.nonEmpty) { <p>Local code: @airport.localCode</p> }
@@ -63,9 +65,9 @@
                 <li>
                     @if(runway.lowEnd.ident.nonEmpty) { Identity: @runway.lowEnd.ident}
                     (
-                    surface: @runway.surface
-                    @if(runway.lengthFeet.nonEmpty) {, length: @runway.lengthFeet ft }
-                    @if(runway.widthFeet.nonEmpty) {, width: @runway.widthFeet ft }
+                    @if(runway.lengthFeet.nonEmpty) { surface: @{runway.surface}, }
+                    @if(runway.lengthFeet.nonEmpty) { length: @{runway.lengthFeet}ft, }
+                    @if(runway.widthFeet.nonEmpty) { width: @{runway.widthFeet}ft }
                     )
                 </li>
                 }
@@ -74,6 +76,9 @@
         </li>
         }
     </ul>
-    }}
+    }} else { <h3>Country not found</h3>}}
 </div>
+
+<script src="@routes.Assets.versioned("js/main.js")"></script>
+
 }

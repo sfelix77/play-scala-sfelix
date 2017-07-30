@@ -2,7 +2,7 @@ $('#country').autocomplete({
     minLength: 2,
     source : function(request, response)
     {
-        $.get("/autocomplete/?country="+request.term,
+        $.get("/autocomplete?country="+request.term,
         function(data, status){
             response(data)
         });

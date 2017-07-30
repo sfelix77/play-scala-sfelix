@@ -3,6 +3,7 @@ package controllers
 import models._
 import javax.inject._
 
+import play.api.Logger
 import play.api.i18n._
 import play.api.mvc._
 import play.api.data.Form
@@ -10,6 +11,7 @@ import play.api.data.Forms._
 import play.api.libs.json.Json
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 import scala.util.control.NonFatal
 
 /**
@@ -20,6 +22,16 @@ import scala.util.control.NonFatal
 class HomeController @Inject()(cc: ControllerComponents)(implicit ec: ExecutionContext) extends AbstractController(cc) with I18nSupport {
 
   private val _countryForm: Form[String] = Form(single("country" -> nonEmptyText(2)))
+
+  private val _catalog: Catalog = {
+    val catalog = Try(AppConfig.catalog)
+    if(catalog.isFailure) {
+      Logger.error("test " + catalog.failed.get.getMessage)
+      Catalog()
+    } else {
+      catalog.get
+    }
+  }
 
   private def _countryFilter(country: Country, value: String, isLazy: Boolean) : Boolean = {
     val _value = value.toLowerCase
@@ -65,19 +77,6 @@ class HomeController @Inject()(cc: ControllerComponents)(implicit ec: ExecutionC
     )
   }
 
-  private def _findCountryAirports(country: String): (Option[Country], Seq[Airport]) = {
-    val countries = AppConfig.catalog.countries.filter(_countryFilter(_, country, false)).sortWith(_.name < _.name)
-    val countryFound = countries.headOption
-    val airportsFound = {
-      if(countryFound.nonEmpty) {
-        countryFound.get.airports.getOrElse(Seq.empty)
-      }
-      else Seq.empty[Airport]
-    }
-
-    (countryFound, airportsFound)
-  }
-
   /** GET /reports
     *
     * @return reports page
@@ -85,8 +84,8 @@ class HomeController @Inject()(cc: ControllerComponents)(implicit ec: ExecutionC
   def reports = Action { implicit request =>
 
     val countriesSorted = {
-      if (AppConfig.catalog.countries.nonEmpty)
-        AppConfig.catalog.countries.sortWith(_.airports.getOrElse(Seq.empty).length > _.airports.getOrElse(Seq.empty).length)
+      if (_catalog.countries.nonEmpty)
+        _catalog.countries.sortWith(_.airports.getOrElse(Seq.empty).length > _.airports.getOrElse(Seq.empty).length)
       else Seq.empty
     }
 
@@ -109,8 +108,8 @@ class HomeController @Inject()(cc: ControllerComponents)(implicit ec: ExecutionC
     // Type of runways (as indicated in "surface" field) per country
     // --> Option[Seq[(Country, Set[String])]]
     val typeOfRunawayPerCountry = {
-      if (AppConfig.catalog.countries.nonEmpty)
-        Some(AppConfig.catalog.countries.map(country =>
+      if (_catalog.countries.nonEmpty)
+        Some(_catalog.countries.map(country =>
           (country,                                     // tuple 1 -->  Country
             country.airports.getOrElse(Seq.empty)       // tuple 2 -->  Seq[Country]
               .flatMap(_.runways.getOrElse(Seq.empty))  //              Seq[Runway]
@@ -123,8 +122,8 @@ class HomeController @Inject()(cc: ControllerComponents)(implicit ec: ExecutionC
     // top 10 most common runway identifications (indicated in "lowEnd.ident" field)
     // ---> Option[Seq[(String, Int)]]
     val runwayIdentTop10 = {
-      if (AppConfig.catalog.runways.nonEmpty)
-        Some(AppConfig.catalog.runways
+      if (_catalog.runways.nonEmpty)
+        Some(_catalog.runways
           .filter(_.lowEnd.ident.nonEmpty)
           .groupBy(_.lowEnd.ident)
           .map(gr => (gr._1.get, gr._2.size))
@@ -151,7 +150,7 @@ class HomeController @Inject()(cc: ControllerComponents)(implicit ec: ExecutionC
         Future(Ok(Json.toJson(List.empty[CountryAutoComplete])))
       },
       data => {
-        Future { AppConfig.catalog.countries
+        Future { _catalog.countries
           .filter(_countryFilter(_, data, true))
           .map(c => CountryAutoComplete(c.code, c.name))
           .sortWith((u,v) =>
@@ -166,5 +165,19 @@ class HomeController @Inject()(cc: ControllerComponents)(implicit ec: ExecutionC
         }
       }
     )
+  }
+
+
+  private def _findCountryAirports(country: String): (Option[Country], Seq[Airport]) = {
+    val countries = _catalog.countries.filter(_countryFilter(_, country, false)).sortWith(_.name < _.name)
+    val countryFound = countries.headOption
+    val airportsFound = {
+      if(countryFound.nonEmpty) {
+        countryFound.get.airports.getOrElse(Seq.empty)
+      }
+      else Seq.empty[Airport]
+    }
+
+    (countryFound, airportsFound)
   }
 }

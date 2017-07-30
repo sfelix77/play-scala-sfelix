@@ -1,7 +1,9 @@
 # play-scala-sfelix
 
-This web application ask the user for two actions : 
+This web application ask the user for two actions :
+
 Query the airports & runways by country
+
 Reports airport in the world
 
 
@@ -14,6 +16,12 @@ sbt run
 ```
 
 And open [http://localhost:9000/](http://localhost:9000/)
+
+Start the Play test:
+
+```
+sbt test
+```
 
 ## Credits
 
